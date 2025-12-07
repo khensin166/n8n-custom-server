@@ -1,11 +1,3 @@
-Tentu, ini adalah draft README.md yang profesional dan lengkap untuk repositori GitHub kamu.
-
-Dokumentasi ini mencakup arsitektur khusus yang kita bangun (Custom Docker Image dengan Python + Fix IPv4) dan konfigurasi spesifik Supabase (Session Mode) agar kamu tidak lupa di kemudian hari.
-
-Silakan simpan kode di bawah ini dengan nama file README.md di dalam folder proyekmu.
-
-Markdown
-
 # Self-Hosted n8n on Railway & Supabase
 
 ![n8n](https://img.shields.io/badge/n8n-Workflow_Automation-orange?style=for-the-badge&logo=n8n)
@@ -61,3 +53,57 @@ ENV NODE_OPTIONS="--dns-result-order=ipv4first"
 
 USER node
 ```
+### 3. Deploy ke Railway
+
+1.  Buat **New Project** di Railway -> Pilih **Deploy from GitHub repo**.
+2.  Pilih repositori ini.
+3.  Tunggu hingga build awal selesai (kemungkinan akan gagal/crash di awal karena variabel belum diset, ini normal).
+4.  Masuk ke tab **Variables** di dashboard Railway dan masukkan konfigurasi di bawah ini.
+
+#### 🔑 Environment Variables (Wajib)
+
+Masukkan variabel-variabel berikut agar n8n dapat terhubung ke database dan berjalan dengan stabil:
+
+| Variable | Value (Contoh) | Penjelasan |
+| :--- | :--- | :--- |
+| `DB_TYPE` | `postgresdb` | Tipe database yang digunakan. |
+| `DB_POSTGRESDB_HOST` | `aws-0-sg.pooler.supabase.com` | **PENTING:** Gunakan Host dari **Connection Pooler** (bukan Direct). |
+| `DB_POSTGRESDB_PORT` | `6543` | **PENTING:** Wajib gunakan Port **6543** (Pooler). |
+| `DB_POSTGRESDB_DATABASE`| `postgres` | Nama database default. |
+| `DB_POSTGRESDB_USER` | `postgres.vgrgx...` | **PENTING:** Gunakan format user lengkap (`user.project_id`). |
+| `DB_POSTGRESDB_PASSWORD`| `Rahasia123` | Password database Supabase kamu. |
+| `DB_POSTGRESDB_SSL_REJECT_UNAUTHORIZED` | `false` | Mencegah error *SSL handshake* saat koneksi database. |
+| `N8N_ENCRYPTION_KEY` | `k3n4nRaH4s1a...` | String acak untuk enkripsi kredensial. **JANGAN SAMPAI HILANG!** |
+| `WEBHOOK_URL` | `https://project.up.railway.app/` | Domain publik Railway (Generate di tab *Settings* -> *Networking*). |
+| `N8N_SECURE_COOKIE` | `false` | **WAJIB:** Set `false` agar bisa login di belakang proxy Railway (HTTP). |
+| `N8N_PROXY_HOPS` | `1` | Mencegah error validasi Proxy/IP Address. |
+
+#### ⚠️ Troubleshooting Umum
+
+Jika n8n gagal *deploy* atau *crash*, cek kemungkinan berikut:
+
+**1. Error `ENETUNREACH 2406:...` (IPv6 Error)**
+* **Penyebab:** n8n mencoba koneksi via IPv6 yang tidak stabil di Railway.
+* **Solusi:** Pastikan `NODE_OPTIONS="--dns-result-order=ipv4first"` sudah ada di Dockerfile. Pastikan Host menggunakan alamat Pooler Supabase.
+
+**2. Error `db_termination` atau `unexpected EOF`**
+* **Penyebab:** Supabase Pooler menggunakan mode *Transaction* yang tidak kompatibel dengan n8n.
+* **Solusi:** Masuk ke Dashboard Supabase -> Database settings -> Ubah **Pool Mode** menjadi **Session**.
+
+**3. Error `401 Unauthorized` saat Login**
+* **Penyebab:** Masalah *Secure Cookie* karena Railway menggunakan HTTPS di depan tapi forward ke container via HTTP.
+* **Solusi:** Pastikan variable `N8N_SECURE_COOKIE=false`.
+
+**4. Error `ValidationError: X-Forwarded-For...`**
+* **Penyebab:** n8n mencurigai header proxy dari Railway.
+* **Solusi:** Pastikan variable `N8N_PROXY_HOPS=1`.
+
+#### 🛡️ Keamanan (RLS)
+
+Sangat disarankan untuk mengaktifkan **RLS (Row Level Security)** pada tabel-tabel n8n di Supabase (`execution_entity`, `credentials_entity`, dll) agar data tidak terekspos ke API publik Supabase.
+
+* **Caranya:** Masuk Supabase -> Table Editor -> Klik tabel n8n -> Klik **Enable RLS**.
+* **Catatan:** Tidak perlu membuat policy tambahan (karena n8n mengakses via user admin `postgres` yang otomatis mem-bypass RLS).
+
+---
+**Dibuat oleh Kenan**
