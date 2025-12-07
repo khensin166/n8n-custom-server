@@ -17,6 +17,8 @@ RUN apk add --update --no-cache python3 py3-pip
 # Contoh: Install library npm global tambahan (misal: moment, lodash)
 # RUN npm install -g moment
 
-# --- Kembali ke User Node (PENTING) ---
-# Jangan jalankan n8n sebagai root demi keamanan
+# Kita tanamkan perintah ini langsung di dalam image
+# Supaya n8n TIDAK BISA menolak untuk pakai IPv4
+ENV NODE_OPTIONS="--dns-result-order=ipv4first"
+
 USER node
