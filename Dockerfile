@@ -1,7 +1,7 @@
 # --- Base Image ---
 # Menggunakan versi terbaru n8n
 # FROM n8nio/n8n:latest
-FROM n8nio/n8n:1.75.2-alpine
+FROM n8nio/n8n:latest
 
 # --- Masuk sebagai Root ---
 # Kita perlu akses root untuk menginstall package tambahan
@@ -9,7 +9,10 @@ USER root
 
 # --- Custom 1: Install Python (Opsional) ---
 # Banyak user n8n butuh Python untuk manipulasi data kompleks
-RUN apk add --update --no-cache python3 py3-pip
+# RUN apk add --update --no-cache python3 py3-pip
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
 
 # --- Custom 2: Install Paket Tambahan Lainnya (Opsional) ---
 # Contoh: Install library requests untuk Python
