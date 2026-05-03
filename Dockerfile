@@ -8,7 +8,7 @@ USER root
 # --- 3. Install Python & Dependencies ---
 # Karena ini Alpine asli, perintah 'apk' pasti jalan!
 # Kita juga install 'build-base' jaga-jaga kalau n8n butuh compile sesuatu.
-RUN apk add --update --no-cache python3 py3-pip build-base
+RUN apk add --update --no-cache python3 py3-pip build-base ffmpeg
 
 # --- 4. Install n8n Manual ---
 # Kita download n8n langsung dari NPM (Pusat Library Node.js)
